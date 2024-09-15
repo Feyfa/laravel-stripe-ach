@@ -4,6 +4,7 @@
     </div>
     <ul class="flex gap-5 text-white">
         <li><a href="/" class="underline">Create</a></li>
+        <li><a href="/replace" class="underline">Replace</a></li>
         <li><a href="/verify" class="underline">Verify</a></li>
         <li><a href="/charge" class="underline">Charge</a></li>
     </ul>

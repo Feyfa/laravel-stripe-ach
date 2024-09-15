@@ -22,3 +22,6 @@ Route::post('/stripe/ach/verify', [CustomerController::class, 'verifyCustomerStr
 
 Route::get('/charge', [CustomerController::class, 'chargeView']);
 Route::post('/stripe/ach/charge', [CustomerController::class, 'chargeCustomerStripe'])->name('charge-customer-stripe');
+
+Route::get('/replace', [CustomerController::class, 'replaceView']);
+Route::post('/stripe/ach/replace', [CustomerController::class, 'replaceCustomerStripe'])->name('replace-customer-stripe');

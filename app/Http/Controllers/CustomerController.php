@@ -176,7 +176,7 @@ class CustomerController extends Controller
                 'customer' => $customer_card_id, // Customer ID dari session
                 'payment_method' => $bank_account_id, // Bank Account ID dari session
                 'confirm' => true, // Mengonfirmasi dan memulai pembayaran
-                'off_session' => true, // Untuk pembayaran di luar sesi pengguna
+                'off_session' => false, // Pembayaran dilakukan saat sesi pengguna aktif
                 'mandate_data' => [
                     'customer_acceptance' => [
                         'type' => 'online',
@@ -192,9 +192,145 @@ class CustomerController extends Controller
                 'paymentIntent' => $paymentIntent
             ]);
 
+            $paymentIntentId = $paymentIntent->id;
+
+            while(true) {
+                try {
+                    sleep(5);
+
+                    Log::info('retreive');
+
+                    $paymentIntent  = $stripe->paymentIntents->retrieve($paymentIntentId);
+                    
+                    if($paymentIntent->status != 'processing') {
+                        Log::info("", [
+                            'paymentIntent' => $paymentIntent
+                        ]);
+
+                        break;
+                    }
+                } catch (\Exception $e) {
+                    Log::info("", [
+                        'error' => $e->getMessage()
+                    ]);
+
+                    return redirect('/charge')->with('check', [
+                        'error' => true,
+                        'message' => json_encode($e->getMessage()),
+                    ]);
+
+                    break; exit; die();
+                }
+            }
+
+            if($paymentIntent->status == 'requires_payment_method') {
+                return redirect('/charge')->with('check', [
+                    'error' => true,
+                    'message' => $paymentIntent->last_payment_error->message,
+                ]);
+            } else if($paymentIntent->status == 'succeeded') {
+                return redirect('/charge')->with('check', [
+                    'success' => true,
+                    'message' => "success charge {$request->amount} amount",
+                ]);
+            } else {
+                return redirect('/charge')->with('check', [
+                    'error' => true,
+                    'message' => "Something Error",
+                ]);
+            }
+        } catch (\Exception $e) {
+            Log::error([
+                'error' => $e->getMessage()
+            ]);
+
             return redirect('/charge')->with('check', [
-                'success' => true,
-                'message' => "success charge {$request->amount} amount",
+                'error' => true,
+                'message' => json_encode($e->getMessage()),
+            ]);
+        }
+    }
+
+    public function replaceView()
+    {
+        return view('customer.replace');
+    }
+
+    public function replaceCustomerStripe(Request $request)
+    {
+        $request->validate([
+            'customer_card_id' => ['required'],
+            'old_bank_account_id' => ['required'],
+            'new_account_holder_name' => ['required'],
+            'new_account_holder_type' => ['required'],
+            'new_routing_number' => ['required'],
+            'new_account_number' => ['required'],
+        ]);
+
+        $customer_card_id = $request->customer_card_id;
+        $old_bank_account_id = $request->old_bank_account_id;
+        $new_account_holder_name = $request->new_account_holder_name;
+        $new_account_holder_type = $request->new_account_holder_type;
+        $new_routing_number = $request->new_routing_number;
+        $new_account_number = $request->new_account_number;
+
+        Log::info([
+            'customer_card_id' => $request->customer_card_id,
+            'old_bank_account_id' => $request->old_bank_account_id,
+            'new_account_holder_name' => $request->new_account_holder_name,
+            'new_account_holder_type' => $request->new_account_holder_type,
+            'new_routing_number' => $request->new_routing_number,
+            'new_account_number' => $request->new_account_number,
+        ]);
+
+        $stripe = new StripeClient(config('stripe.secret_key'));
+
+        try {
+            /* DELETE OLD BANK ACCOUNT */
+            $deleteSource = $stripe->customers->deleteSource(
+                $customer_card_id,
+                $old_bank_account_id
+            );
+            Log::info("", [
+                'deleteSource' => $deleteSource
+            ]);
+            /* DELETE OLD BANK ACCOUNT */   
+
+            /* CREATE NEW TOKEN ADD NEW BANK ACCOUNT ID */
+            $token = $stripe->tokens->create([
+                "bank_account" => [
+                    "country" => "US",
+                    "currency" => "USD",
+                    "account_holder_name" => $new_account_holder_name,
+                    "account_holder_type" => $new_account_holder_type,
+                    "routing_number" => $new_routing_number,
+                    "account_number" => $new_account_number
+                ]
+            ]);
+            $token_id = $token->id;
+            $bank_account_id = $token->bank_account->id;
+
+            Log::info("", [
+                'token' => $token,
+                'token_id',
+                'bank_account_id'
+            ]);
+
+            $customerCreateSorce = $stripe->customers->createSource(
+                $customer_card_id,
+                ['source' => $token_id]
+            );
+
+            Log::info("", [
+                'customerCreateSorce' => $customerCreateSorce,
+                'customer_id' => $customerCreateSorce->customer,
+                'customer_card_id' => $customer_card_id
+            ]);
+            /* CREATE NEW TOKEN ADD NEW BANK ACCOUNT ID */
+
+            return redirect('/replace')->with('check', [
+                'new_customer_card_id' => $customer_card_id,
+                'new_bank_account_id' => $bank_account_id
             ]);
         
         } catch (\Exception $e) {
