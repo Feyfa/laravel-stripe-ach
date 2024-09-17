@@ -196,7 +196,7 @@ class CustomerController extends Controller
 
             while(true) {
                 try {
-                    sleep(5);
+                    sleep(4);
 
                     Log::info('retreive');
 
