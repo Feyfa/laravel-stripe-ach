@@ -57,20 +57,43 @@ class CustomerController extends Controller
                 'bank_account_id' => $bank_account_id
             ]);
 
-            $customer = $stripe->customers->create([
-                "source" => $token_id,
-                "description" => $account_holder_name
-            ]);
-            $customer_id = $customer->id;
+            // /* JIKA BELUM DI BUAT CUSTOMER NYA */
+            // // $customer = $stripe->customers->create([
+            // //     "source" => $token_id,
+            // //     "description" => $account_holder_name
+            // // ]);
+
+            
+            // $customer = $stripe->customers->create([
+            //     "source" => $token_id,
+            //     "description" => $account_holder_name
+            // ],['stripe_account' => 'acct_1Q0u2oRr4Oh7GNUV']);
+
+            // $customer_id = $customer->id;
+            // /* JIKA BELUM DI BUAT CUSTOMER NYA */
+
+            /* JIKA SUDAH DIBUAT CUSTOMER NYA */
+            // $source = $stripe->customers->createSource(
+            //     'cus_QsBU5fypJxyY0q',
+            //     ['source' => $token_id]
+            // );
+
+
+            $source = $stripe->customers->createSource(
+                'cus_QsfXxmGZ4YWgQN',
+                ['source' => $token_id],
+                ['stripe_account' => 'acct_1Q0u2oRr4Oh7GNUV']
+            );
+            /* JIKA SUDAH DIBUAT CUSTOMER NYA */
 
             Log::info('',[
-                'customer' => $customer,
-                'customer_id' => $customer_id
+                'customer' => $customer ?? "",
+                'customer_id' => $customer_id ?? "",
             ]);
 
-            return redirect('/')->with('check', [
-                'customer_id' => $customer_id,
-                'bank_account_id' => $bank_account_id
+            return redirect('/')->with('check' ?? "", [
+                'customer_id' => $customer_id ?? "",
+                'bank_account_id' => $bank_account_id ?? "",
             ]);      
         } catch (\Exception $e) {
             Log::error([
@@ -112,11 +135,22 @@ class CustomerController extends Controller
                 'customer_card_id' => $customer_card_id,
                 'bank_account_id' => $bank_account_id,
             ]);
-    
+            
+            /* TANPA STRIPE CONNECT */
+            // $bank_account = $stripe->customers->retrieveSource(
+            //     $customer_card_id,
+            //     $bank_account_id
+            // );
+            /* TANPA STRIPE CONNECT */
+
+            /* PAKAI STRIPE CONNECT */
             $bank_account = $stripe->customers->retrieveSource(
                 $customer_card_id,
-                $bank_account_id
+                $bank_account_id,
+                [],
+                ['stripe_account' => 'acct_1Q0u2oRr4Oh7GNUV']
             );
+            /* PAKAI STRIPE CONNECT */
             
             Log::info('', [
                 'ke' => '1',
@@ -169,6 +203,7 @@ class CustomerController extends Controller
         $stripe = new StripeClient(config('stripe.secret_key'));
 
         try {
+            /* TANPA STRIPE ACCOUNT */
             $paymentIntent = $stripe->paymentIntents->create([
                 'amount' => $amount,
                 'currency' => 'usd',
@@ -187,6 +222,29 @@ class CustomerController extends Controller
                     ],
                 ],
             ]);
+            /* TANPA STRIPE ACCOUNT */
+
+            /* PAKAI STRIPE ACCOUNT */
+            // $paymentIntent = $stripe->paymentIntents->create([
+            //     'amount' => $amount,
+            //     'currency' => 'usd',
+            //     'payment_method_types' => ['us_bank_account'], // Menggunakan ACH
+            //     'customer' => $customer_card_id, // Customer ID dari session
+            //     'payment_method' => $bank_account_id, // Bank Account ID dari session
+            //     'confirm' => true, // Mengonfirmasi dan memulai pembayaran
+            //     'off_session' => false, // Pembayaran dilakukan saat sesi pengguna aktif
+            //     'mandate_data' => [
+            //         'customer_acceptance' => [
+            //             'type' => 'online',
+            //             'online' => [
+            //                 'ip_address' => $ipAddress, // Alamat IP pengguna
+            //                 'user_agent' => $userAgent, // User agent pengguna
+            //             ],
+            //         ],
+            //     ],
+            // ],['stripe_account' => 'acct_1Q0u2oRr4Oh7GNUV']);
+            /* PAKAI STRIPE ACCOUNT */
+
         
             Log::info('', [
                 'paymentIntent' => $paymentIntent
@@ -200,7 +258,17 @@ class CustomerController extends Controller
 
                     Log::info('retreive');
 
+                    /* TIDAK PAKAI STRIPE ACCOUNT */
                     $paymentIntent  = $stripe->paymentIntents->retrieve($paymentIntentId);
+                    /* TIDAK PAKAI STRIPE ACCOUNT */
+                    
+                    /* PAKAI STRIPE ACCOUNT */
+                    // $paymentIntent  = $stripe->paymentIntents->retrieve(
+                    //     $paymentIntentId,
+                    //     [],
+                    //     ['stripe_account' => 'acct_1Q0u2oRr4Oh7GNUV']
+                    // );
+                    /* PAKAI STRIPE ACCOUNT */
                     
                     if($paymentIntent->status != 'processing') {
                         Log::info("", [
@@ -343,5 +411,66 @@ class CustomerController extends Controller
                 'message' => json_encode($e->getMessage()),
             ]);
         }
+    }
+
+    public function connectedAccount(Request $request)
+    {
+        $stripe = new StripeClient(config('stripe.secret_key'));
+        
+        // create connected accounts
+        // $account = $stripe->accounts->create([
+        //     'country' => 'US',
+        //     'email' => 'user@example.com',
+        //     'controller' => [
+        //         'fees' => ['payer' => 'application'],
+        //         'losses' => ['payments' => 'application'],
+        //         'stripe_dashboard' => ['type' => 'express'],
+        //     ],
+        // ]);
+        // $account = $stripe->accounts->create([
+        //     'country' => 'US',
+        //     'email' => 'user4@example.com',
+        //     'controller' => [
+        //         'fees' => ['payer' => 'application'],
+        //         'losses' => ['payments' => 'application'],
+        //         'stripe_dashboard' => ['type' => 'express'],
+        //     ],
+        //     'capabilities' => [
+        //         'card_payments' => ['requested' => true],
+        //         'transfers' => ['requested' => true],
+        //     ],
+        // ]);
+
+        // Log::info('', [
+        //     'account' => $account
+        // ]);
+
+        // return response()->json([
+        //     'account' => $account
+        // ]);
+
+        $id = 'acct_1Q0u2oRr4Oh7GNUV';
+
+        // create account links
+        $link = $stripe->accountLinks->create([
+            'account' => $id,
+            'refresh_url' => 'http://stripeach.com/',
+            'return_url' => 'http://stripeach.com/',
+            'type' => 'account_onboarding',
+        ]);
+
+        Log::info('', [
+            'link' => $link
+        ]);
+
+        return response()->json([
+            'link' => $link
+        ]);
+    }
+
+    public function deleteConnectedAccount(Request $request)
+    {
+        $stripe = new StripeClient(config('stripe.secret_key'));
+        $stripe->accounts->delete('acct_1Q0tioRuY4jwC8iu', []);
     }
 }
