@@ -49,41 +49,46 @@ class CustomerController extends Controller
                 ]
             ]);
             $token_id = $token->id;
-            $bank_account_id = $token->bank_account->id;
 
             Log::info('',[
                 'token' => $token,
                 'token_id' => $token_id,
-                'bank_account_id' => $bank_account_id
             ]);
 
             // /* JIKA BELUM DI BUAT CUSTOMER NYA */
-            // // $customer = $stripe->customers->create([
-            // //     "source" => $token_id,
-            // //     "description" => $account_holder_name
-            // // ]);
+            // $customer = $stripe->customers->create([
+            //     "source" => $token_id,
+            //     "description" => $account_holder_name,
+            //     "name" => $account_holder_name,
+            // ]);
+            // $bank_account_id = $customer->default_source ?? "";
 
             
             // $customer = $stripe->customers->create([
             //     "source" => $token_id,
-            //     "description" => $account_holder_name
-            // ],['stripe_account' => 'acct_1Q0u2oRr4Oh7GNUV']);
+            //     "description" => $account_holder_name,
+            //     "name" => $account_holder_name,
+            // ],['stripe_account' => 'acct_1Q2ZyORrCfUBT75a']);
+            // $bank_account_id = $customer->default_source ?? "";
 
             // $customer_id = $customer->id;
             // /* JIKA BELUM DI BUAT CUSTOMER NYA */
 
             /* JIKA SUDAH DIBUAT CUSTOMER NYA */
-            // $source = $stripe->customers->createSource(
-            //     'cus_QsBU5fypJxyY0q',
-            //     ['source' => $token_id]
-            // );
-
-
-            $source = $stripe->customers->createSource(
-                'cus_QsfXxmGZ4YWgQN',
-                ['source' => $token_id],
-                ['stripe_account' => 'acct_1Q0u2oRr4Oh7GNUV']
+            $customer = $stripe->customers->createSource(
+                'cus_QuPuLMkv4FawxY',
+                ['source' => $token_id]
             );
+            $bank_account_id = $customer->id ?? "";
+
+
+
+            // $customer = $stripe->customers->createSource(
+            //     'cus_QuPdVOqhWc2sWq',
+            //     ['source' => $token_id],
+            //     ['stripe_account' => 'acct_1Q2ZyORrCfUBT75a']
+            // );
+            // $bank_account_id = $customer->id ?? "";
             /* JIKA SUDAH DIBUAT CUSTOMER NYA */
 
             Log::info('',[
@@ -148,7 +153,7 @@ class CustomerController extends Controller
                 $customer_card_id,
                 $bank_account_id,
                 [],
-                ['stripe_account' => 'acct_1Q0u2oRr4Oh7GNUV']
+                ['stripe_account' => 'acct_1Q2ZyORrCfUBT75a']
             );
             /* PAKAI STRIPE CONNECT */
             
@@ -204,27 +209,6 @@ class CustomerController extends Controller
 
         try {
             /* TANPA STRIPE ACCOUNT */
-            $paymentIntent = $stripe->paymentIntents->create([
-                'amount' => $amount,
-                'currency' => 'usd',
-                'payment_method_types' => ['us_bank_account'], // Menggunakan ACH
-                'customer' => $customer_card_id, // Customer ID dari session
-                'payment_method' => $bank_account_id, // Bank Account ID dari session
-                'confirm' => true, // Mengonfirmasi dan memulai pembayaran
-                'off_session' => false, // Pembayaran dilakukan saat sesi pengguna aktif
-                'mandate_data' => [
-                    'customer_acceptance' => [
-                        'type' => 'online',
-                        'online' => [
-                            'ip_address' => $ipAddress, // Alamat IP pengguna
-                            'user_agent' => $userAgent, // User agent pengguna
-                        ],
-                    ],
-                ],
-            ]);
-            /* TANPA STRIPE ACCOUNT */
-
-            /* PAKAI STRIPE ACCOUNT */
             // $paymentIntent = $stripe->paymentIntents->create([
             //     'amount' => $amount,
             //     'currency' => 'usd',
@@ -242,7 +226,28 @@ class CustomerController extends Controller
             //             ],
             //         ],
             //     ],
-            // ],['stripe_account' => 'acct_1Q0u2oRr4Oh7GNUV']);
+            // ]);
+            /* TANPA STRIPE ACCOUNT */
+
+            /* PAKAI STRIPE ACCOUNT */
+            $paymentIntent = $stripe->paymentIntents->create([
+                'amount' => $amount,
+                'currency' => 'usd',
+                'payment_method_types' => ['us_bank_account'], // Menggunakan ACH
+                'customer' => $customer_card_id, // Customer ID dari session
+                'payment_method' => $bank_account_id, // Bank Account ID dari session
+                'confirm' => true, // Mengonfirmasi dan memulai pembayaran
+                'off_session' => false, // Pembayaran dilakukan saat sesi pengguna aktif
+                'mandate_data' => [
+                    'customer_acceptance' => [
+                        'type' => 'online',
+                        'online' => [
+                            'ip_address' => $ipAddress, // Alamat IP pengguna
+                            'user_agent' => $userAgent, // User agent pengguna
+                        ],
+                    ],
+                ],
+            ],['stripe_account' => 'acct_1Q2ZyORrCfUBT75a']);
             /* PAKAI STRIPE ACCOUNT */
 
         
@@ -259,15 +264,15 @@ class CustomerController extends Controller
                     Log::info('retreive');
 
                     /* TIDAK PAKAI STRIPE ACCOUNT */
-                    $paymentIntent  = $stripe->paymentIntents->retrieve($paymentIntentId);
+                    // $paymentIntent  = $stripe->paymentIntents->retrieve($paymentIntentId);
                     /* TIDAK PAKAI STRIPE ACCOUNT */
                     
                     /* PAKAI STRIPE ACCOUNT */
-                    // $paymentIntent  = $stripe->paymentIntents->retrieve(
-                    //     $paymentIntentId,
-                    //     [],
-                    //     ['stripe_account' => 'acct_1Q0u2oRr4Oh7GNUV']
-                    // );
+                    $paymentIntent  = $stripe->paymentIntents->retrieve(
+                        $paymentIntentId,
+                        [],
+                        ['stripe_account' => 'acct_1Q2ZyORrCfUBT75a']
+                    );
                     /* PAKAI STRIPE ACCOUNT */
                     
                     if($paymentIntent->status != 'processing') {
@@ -376,12 +381,10 @@ class CustomerController extends Controller
                 ]
             ]);
             $token_id = $token->id;
-            $bank_account_id = $token->bank_account->id;
 
             Log::info("", [
                 'token' => $token,
-                'token_id',
-                'bank_account_id'
+                'token_id' => $token_id
             ]);
 
             $customerCreateSorce = $stripe->customers->createSource(
@@ -389,10 +392,13 @@ class CustomerController extends Controller
                 ['source' => $token_id]
             );
 
+            $bank_account_id = $customerCreateSorce->id ?? "";
+
             Log::info("", [
                 'customerCreateSorce' => $customerCreateSorce,
                 'customer_id' => $customerCreateSorce->customer,
-                'customer_card_id' => $customer_card_id
+                'customer_card_id' => $customer_card_id,
+                'bank_account_id' => $bank_account_id
             ]);
             /* CREATE NEW TOKEN ADD NEW BANK ACCOUNT ID */
 
@@ -440,6 +446,17 @@ class CustomerController extends Controller
         //         'transfers' => ['requested' => true],
         //     ],
         // ]);
+        // $account = $stripe->accounts->create([
+        //     'type' => 'standard',
+        //     'business_type' => 'non_profit',
+        //     'business_profile' => [
+        //         'mcc' => 8661,
+        //         'url' => 'http://stripeach.com/',
+        //     ],
+        //     'company' => [
+
+        //     ]
+        // ]);
 
         // Log::info('', [
         //     'account' => $account
@@ -449,23 +466,23 @@ class CustomerController extends Controller
         //     'account' => $account
         // ]);
 
-        $id = 'acct_1Q0u2oRr4Oh7GNUV';
+        // $id = 'acct_1Q2ZyORrCfUBT75a';
 
-        // create account links
-        $link = $stripe->accountLinks->create([
-            'account' => $id,
-            'refresh_url' => 'http://stripeach.com/',
-            'return_url' => 'http://stripeach.com/',
-            'type' => 'account_onboarding',
-        ]);
+        // // create account links
+        // $link = $stripe->accountLinks->create([
+        //     'account' => $id,
+        //     'refresh_url' => 'http://stripeach.com/',
+        //     'return_url' => 'http://stripeach.com/',
+        //     'type' => 'account_onboarding',
+        // ]);
 
-        Log::info('', [
-            'link' => $link
-        ]);
+        // Log::info('', [
+        //     'link' => $link
+        // ]);
 
-        return response()->json([
-            'link' => $link
-        ]);
+        // return response()->json([
+        //     'link' => $link
+        // ]);
     }
 
     public function deleteConnectedAccount(Request $request)
