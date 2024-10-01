@@ -21,3 +21,5 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 
 Route::post('/stripe/connected-account', [CustomerController::class, 'connectedAccount']);
 Route::post('/stripe/delete-connected-account', [CustomerController::class, 'deleteConnectedAccount']);
+
+Route::post('/stripe/charges/retreive', [CustomerController::class, 'stripeChargeRetreive']);
