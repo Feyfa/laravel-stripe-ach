@@ -87,7 +87,7 @@ class CustomerController extends Controller
             //     "source" => $token_id,
             //     "description" => $account_holder_name,
             //     "name" => $account_holder_name,
-            // ],['stripe_account' => 'acct_1Q2ZyORrCfUBT75a']);
+            // ],['stripe_account' => 'acct_1Q0u2oRr4Oh7GNUV']);
             // $bank_account_id = $customer->default_source ?? "";
 
             // $customer_id = $customer->id;
@@ -227,8 +227,6 @@ class CustomerController extends Controller
 
     public function chargeCustomerStripe(Request $request)
     {
-        set_time_limit(300);
-
         $request->validate([
             'customer_card_id' => ['required'],
             'bank_account_id' => ['required'],
@@ -267,6 +265,41 @@ class CustomerController extends Controller
             /* TANPA STRIPE ACCOUNT */
 
             /* PAKAI STRIPE ACCOUNT */
+            $details = [
+                'name'  => 'Contoh Perusahaan',
+                'invoiceNumber' => 'INV-12345-678',
+                'min_leads' => 10,
+                'exceed_leads' => 5,
+                'total_leads' => 15,
+                'min_cost' => 100000,
+                'platform_min_cost' => 120000,
+                'cost_leads' => 20000,
+                'platform_cost_leads' => 25000,
+                'total_amount' => 300000,
+                'platform_total_amount' => 350000,
+                'invoiceDate' => date('m-d-Y', strtotime('2024-10-08')),
+                'startBillingDate' => date('m-d-Y H:i:s', strtotime('2024-10-01')),
+                'endBillingDate' => date('m-d-Y H:i:s', strtotime('2024-10-31')),
+                'invoiceStatus' => 'Paid',
+                'cardlast' => '**** **** **** 1234',
+                'leadspeekapiid' => 'LSP-API-123456',
+                'paymentterm' => 'Net 30',
+                'invoicetype' => 'agency',
+                'agencyname' => 'Nama Agensi Contoh',
+                'defaultadmin' => 'admin@contoh.com',
+                'agencyNet' => 50000,
+                'rootFee' => 15000,
+                'cleanProfit' => 35000,
+            ];
+            
+            $attachement = array();
+
+            $from = [
+                'address' => 'noreply@gmail.com',
+                'name' => 'Invoice',
+                'replyto' => 'support@gmail.com',
+            ];
+        
             $paymentIntent = $stripe->paymentIntents->create([
                 'amount' => $amount,
                 'currency' => 'usd',
@@ -284,6 +317,12 @@ class CustomerController extends Controller
                         ],
                     ],
                 ],
+                'metadata' => [
+                    'film' => 'jujutsu kaizen',
+                    'details' => json_encode($details),
+                    'attachement' => json_encode($attachement),
+                    'from' => json_encode($from)
+                ]
             ],['stripe_account' => 'acct_1Q0u2oRr4Oh7GNUV']);
             /* PAKAI STRIPE ACCOUNT */
         
@@ -293,117 +332,10 @@ class CustomerController extends Controller
 
             $paymentIntentId = $paymentIntent->id;
 
-            for($i = 1; $i <= 10; $i++)
-            {
-                try {
-                    sleep(3);
-    
-                    Log::info("retreive , payment status = {$paymentIntent->status} $i");
-    
-                    /* TIDAK PAKAI STRIPE ACCOUNT */
-                    // $paymentIntent  = $stripe->paymentIntents->retrieve($paymentIntentId);
-                    /* TIDAK PAKAI STRIPE ACCOUNT */
-                    
-                    /* PAKAI STRIPE ACCOUNT */
-                    $paymentIntent  = $stripe->paymentIntents->retrieve(
-                        $paymentIntentId,
-                        [],
-                        ['stripe_account' => 'acct_1Q0u2oRr4Oh7GNUV']
-                    );
-                    /* PAKAI STRIPE ACCOUNT */
-                    
-                    if($paymentIntent->status != 'processing') {
-                        Log::info("", [
-                            'paymentIntent' => $paymentIntent
-                        ]);
-    
-                        break;
-                    }
-
-                    // jika sudah sampai 10 juga belum ada hasil, cancel
-                    if($i == 10) 
-                    {
-                        Log::info("cancel payment intent");
-                        $paymentCancel = $stripe->paymentIntents->cancel(
-                            $paymentIntentId,
-                            [],
-                            ['stripe_account' => 'acct_1Q0u2oRr4Oh7GNUV'] // Menunjukkan akun terhubung
-                        );
-
-                        Log::info('', ['paymentCancel' => $paymentCancel]);
-
-                        return redirect('/charge')->with('check', [
-                            'error' => true,
-                            'message' => 'The card does not respond for a long time',
-                        ]);
-        
-                        break; exit; die();
-                    }
-
-                } catch (\Exception $e) {
-                    Log::info("", [
-                        'error' => $e->getMessage()
-                    ]);
-    
-                    return redirect('/charge')->with('check', [
-                        'error' => true,
-                        'message' => json_encode($e->getMessage()),
-                    ]);
-    
-                    break; exit; die();
-                }
-            }
-
-            if($paymentIntent->status == 'requires_payment_method') {
-                return redirect('/charge')->with('check', [
-                    'error' => true,
-                    'message' => $paymentIntent->last_payment_error->message,
-                ]);
-            } else if($paymentIntent->status == 'succeeded') {
-                $latest_charge = $paymentIntent->latest_charge;
-
-                try 
-                {
-                    for($j = 1; $j <= 10; $j++)
-                    {
-                        sleep(3);
-    
-                        Log::info("cek dispute $j");
-                        
-                        $charges = $stripe->charges->retrieve(
-                            $latest_charge,
-                            [],
-                            ['stripe_account' => 'acct_1Q0u2oRr4Oh7GNUV']
-                        );
-
-                        if($charges->disputed) {
-                            Log::info([
-                                'disputed' => $charges->disputed,
-                                'dispute' => $charges->dispute,
-                            ]);
-                            Log::info('', ['charges' => $charges]);
-                            return redirect('/charge')->with('check', [
-                                'error' => true,
-                                'message' => "Disputed $charges->dispute",
-                            ]);
-                        }
-                    }
-                }
-                catch (\Exception $e)
-                {
-                    Log::info(['error' => $e->getMessage()]);
-                }
-
-                return redirect('/charge')->with('check', [
-                    'success' => true,
-                    'message' => "success charge {$request->amount} amount",
-                ]);
-            } else {
-                return redirect('/charge')->with('check', [
-                    'error' => true,
-                    'message' => "Something Error",
-                ]);
-            }
+            return redirect('/charge')->with('check', [
+                'success' => true,
+                'message' => "waiting webhook charge {$request->amount} amount",
+            ]);
         } catch (\Exception $e) {
             Log::error([
                 'error' => $e->getMessage()
@@ -411,7 +343,7 @@ class CustomerController extends Controller
 
             return redirect('/charge')->with('check', [
                 'error' => true,
-                'message' => json_encode($e->getMessage()),
+                'message' => $e->getMessage()
             ]);
         }
     }
@@ -558,7 +490,7 @@ class CustomerController extends Controller
         //     'account' => $account
         // ]);
 
-        // $id = 'acct_1Q2ZyORrCfUBT75a';
+        // $id = 'acct_1Q0u2oRr4Oh7GNUV';
 
         // // create account links
         // $link = $stripe->accountLinks->create([

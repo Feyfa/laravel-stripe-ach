@@ -9,11 +9,11 @@
             </div>
             <div class="flex flex-col gap-1">
                 <label for="customer_card_id">Customer Card Id</label>
-                <input type="text" required name="customer_card_id" id="customer_card_id" class="input border border-neutral-500 rounded px-2 py-1 outline-none" placeholder="Customer Card Id">
+                <input value="cus_QsfXxmGZ4YWgQN" type="text" required name="customer_card_id" id="customer_card_id" class="input border border-neutral-500 rounded px-2 py-1 outline-none" placeholder="Customer Card Id">
             </div>
             <div class="flex flex-col gap-1">
                 <label for="bank_account_id">Bank Account Id</label>
-                <input type="text" required name="bank_account_id" id="bank_account_id" class="input border border-neutral-500 rounded px-2 py-1 outline-none" placeholder="Bank Account Id">
+                <input value="ba_1Q573sRr4Oh7GNUVk9LwacyQ" type="text" required name="bank_account_id" id="bank_account_id" class="input border border-neutral-500 rounded px-2 py-1 outline-none" placeholder="Bank Account Id">
             </div>
             <div class="flex flex-col gap-1">
                 <label for="amount">Amount</label>

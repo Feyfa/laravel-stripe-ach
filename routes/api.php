@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\CustomerController;
+use App\Http\Controllers\WebhookStripeController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -23,3 +24,5 @@ Route::post('/stripe/connected-account', [CustomerController::class, 'connectedA
 Route::post('/stripe/delete-connected-account', [CustomerController::class, 'deleteConnectedAccount']);
 
 Route::post('/stripe/charges/retreive', [CustomerController::class, 'stripeChargeRetreive']);
+
+Route::post('/webhook/stripe', [WebhookStripeController::class, 'stripe']);

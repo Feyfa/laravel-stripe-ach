@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\CustomerController;
+use App\Http\Controllers\DataController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -25,3 +26,6 @@ Route::post('/stripe/ach/charge', [CustomerController::class, 'chargeCustomerStr
 
 Route::get('/replace', [CustomerController::class, 'replaceView']);
 Route::post('/stripe/ach/replace', [CustomerController::class, 'replaceCustomerStripe'])->name('replace-customer-stripe');
+
+Route::get('/create/data', [DataController::class, 'index']);
+Route::get('/get/data', [DataController::class, 'getData']);
