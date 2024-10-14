@@ -83,12 +83,12 @@ class CustomerController extends Controller
             // $bank_account_id = $customer->default_source ?? "";
 
             
-            // $customer = $stripe->customers->create([
-            //     "source" => $token_id,
-            //     "description" => $account_holder_name,
-            //     "name" => $account_holder_name,
-            // ],['stripe_account' => 'acct_1Q0u2oRr4Oh7GNUV']);
-            // $bank_account_id = $customer->default_source ?? "";
+            $customer = $stripe->customers->create([
+                "source" => $token_id,
+                "description" => $account_holder_name,
+                "name" => $account_holder_name,
+            ],['stripe_account' => 'acct_1Q9q0Y2NjKH4P664']);
+            $bank_account_id = $customer->default_source ?? "";
 
             // $customer_id = $customer->id;
             // /* JIKA BELUM DI BUAT CUSTOMER NYA */
@@ -102,12 +102,12 @@ class CustomerController extends Controller
 
 
 
-            $customer = $stripe->customers->createSource(
-                'cus_QsfXxmGZ4YWgQN',
-                ['source' => $token_id],
-                ['stripe_account' => 'acct_1Q0u2oRr4Oh7GNUV']
-            );
-            $bank_account_id = $customer->id ?? "";
+            // $customer = $stripe->customers->createSource(
+            //     'cus_QsfXxmGZ4YWgQN',
+            //     ['source' => $token_id],
+            //     ['stripe_account' => 'acct_1Q0u2oRr4Oh7GNUV']
+            // );
+            // $bank_account_id = $customer->id ?? "";
             /* JIKA SUDAH DIBUAT CUSTOMER NYA */
 
             Log::info('',[
@@ -265,41 +265,6 @@ class CustomerController extends Controller
             /* TANPA STRIPE ACCOUNT */
 
             /* PAKAI STRIPE ACCOUNT */
-            $details = [
-                'name'  => 'Contoh Perusahaan',
-                'invoiceNumber' => 'INV-12345-678',
-                'min_leads' => 10,
-                'exceed_leads' => 5,
-                'total_leads' => 15,
-                'min_cost' => 100000,
-                'platform_min_cost' => 120000,
-                'cost_leads' => 20000,
-                'platform_cost_leads' => 25000,
-                'total_amount' => 300000,
-                'platform_total_amount' => 350000,
-                'invoiceDate' => date('m-d-Y', strtotime('2024-10-08')),
-                'startBillingDate' => date('m-d-Y H:i:s', strtotime('2024-10-01')),
-                'endBillingDate' => date('m-d-Y H:i:s', strtotime('2024-10-31')),
-                'invoiceStatus' => 'Paid',
-                'cardlast' => '**** **** **** 1234',
-                'leadspeekapiid' => 'LSP-API-123456',
-                'paymentterm' => 'Net 30',
-                'invoicetype' => 'agency',
-                'agencyname' => 'Nama Agensi Contoh',
-                'defaultadmin' => 'admin@contoh.com',
-                'agencyNet' => 50000,
-                'rootFee' => 15000,
-                'cleanProfit' => 35000,
-            ];
-            
-            $attachement = array();
-
-            $from = [
-                'address' => 'noreply@gmail.com',
-                'name' => 'Invoice',
-                'replyto' => 'support@gmail.com',
-            ];
-        
             $paymentIntent = $stripe->paymentIntents->create([
                 'amount' => $amount,
                 'currency' => 'usd',
@@ -316,14 +281,8 @@ class CustomerController extends Controller
                             'user_agent' => $userAgent, // User agent pengguna
                         ],
                     ],
-                ],
-                'metadata' => [
-                    'film' => 'jujutsu kaizen',
-                    'details' => json_encode($details),
-                    'attachement' => json_encode($attachement),
-                    'from' => json_encode($from)
                 ]
-            ],['stripe_account' => 'acct_1Q0u2oRr4Oh7GNUV']);
+            ],['stripe_account' => 'acct_1Q9q0Y2NjKH4P664']);
             /* PAKAI STRIPE ACCOUNT */
         
             Log::info('', [
@@ -481,37 +440,81 @@ class CustomerController extends Controller
 
         //     ]
         // ]);
+        $account = $stripe->accounts->create([
+            'type' => 'custom',
+            'business_type' => 'non_profit',
+            'business_profile' => [
+                'mcc' => 8661,
+                'url' => 'http://stripeach.com/',
+            ],
+            'capabilities' => [
+                'card_payments' => ['requested' => true],
+                'transfers' => ['requested' => true],
+            ],
+        ]);
 
         // Log::info('', [
-        //     'account' => $account
+        //     'account' => $account->toArray()
         // ]);
 
         // return response()->json([
         //     'account' => $account
         // ]);
 
-        // $id = 'acct_1Q0u2oRr4Oh7GNUV';
+        $id = 'acct_1Q9q0Y2NjKH4P664';
 
-        // // create account links
-        // $link = $stripe->accountLinks->create([
-        //     'account' => $id,
-        //     'refresh_url' => 'http://stripeach.com/',
-        //     'return_url' => 'http://stripeach.com/',
-        //     'type' => 'account_onboarding',
-        // ]);
+        // create account links
+        $link = $stripe->accountLinks->create([
+            'account' => $id,
+            'refresh_url' => 'http://stripeach.com/',
+            'return_url' => 'http://stripeach.com/',
+            'type' => 'account_onboarding',
+        ]);
 
-        // Log::info('', [
-        //     'link' => $link
-        // ]);
+        Log::info('', [
+            'link' => $link
+        ]);
 
-        // return response()->json([
-        //     'link' => $link
-        // ]);
+        return response()->json([
+            'link' => $link
+        ]);
     }
 
     public function deleteConnectedAccount(Request $request)
     {
         $stripe = new StripeClient(config('stripe.secret_key'));
         $stripe->accounts->delete('acct_1Q0tioRuY4jwC8iu', []);
+    }
+
+    public function debitConnectedAccount(Request $request) 
+    {
+        $stripe = new StripeClient(config('stripe.secret_key'));
+
+        try 
+        {
+            $transfer = $stripe->transfers->create([
+                'amount' => 1000,  // Jumlah yang akan ditransfer
+                'currency' => 'usd',  // Mata uang transfer
+                'destination' => 'acct_1Q0EgYRwyPH0xNSi',  // Root account sebagai tujuan
+            ], [
+                'stripe_account' => 'acct_1Q9q0Y2NjKH4P664',  // Connected account yang mentransfer dana
+            ]);
+            
+            // $transfer = $stripe->transfers->create([
+            //     'amount' => 1000,  // Jumlah yang akan ditransfer
+            //     'currency' => 'usd',  // Mata uang transfer
+            //     'destination' => 'acct_1Q9q0Y2NjKH4P664',  // Root account sebagai tujuan
+            // ], [
+            //     'stripe_account' => 'acct_1Q0EgYRwyPH0xNSi',  // Connected account yang mentransfer dana
+            // ]);
+
+            Log::info([
+                'transfer' => $transfer->toArray(),
+            ]);
+        } 
+        catch (\Exception $e) 
+        {
+            Log::info(['error' => $e->getMessage()]);
+        }
     }
 }

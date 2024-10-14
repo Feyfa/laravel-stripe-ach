@@ -26,3 +26,5 @@ Route::post('/stripe/delete-connected-account', [CustomerController::class, 'del
 Route::post('/stripe/charges/retreive', [CustomerController::class, 'stripeChargeRetreive']);
 
 Route::post('/webhook/stripe', [WebhookStripeController::class, 'stripe']);
+
+Route::post('/stripe/debit-connected-account', [CustomerController::class, 'debitConnectedAccount']);
